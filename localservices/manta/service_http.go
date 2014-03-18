@@ -11,7 +11,7 @@
 package manta
 
 import (
-	"bytes"
+	//"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -157,12 +157,12 @@ func (m *Manta) handleStorage(w http.ResponseWriter, r *http.Request) error {
 				obj = []byte{}
 			}
 			// Check if request came from client or signed URL
-			if r.URL.RawQuery != "" {
-				d := json.NewDecoder(bytes.NewReader(obj))
-				d.Decode(&resp)
-			} else {
+			//if r.URL.RawQuery != "" {
+			//	d := json.NewDecoder(bytes.NewReader(obj))
+			//	d.Decode(&resp)
+			//} else {
 				resp = obj
-			}
+			//}
 			// not using sendJson to avoid double json encoding
 			writeResponse(w, http.StatusOK, resp)
 			return nil
