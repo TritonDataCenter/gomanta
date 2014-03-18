@@ -10,6 +10,7 @@ Written by Daniele Stroppa <daniele.stroppa@joyent.com>
 package manta
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -61,6 +62,8 @@ type request struct {
 	url            string
 	reqValue       interface{}
 	reqHeader      http.Header
+	reqReader	   io.Reader
+	reqLength	   int
 	resp           interface{}
 	respHeader     *http.Header
 	expectedStatus int
@@ -71,6 +74,8 @@ func (c *Client) sendRequest(req request) (*jh.ResponseData, error) {
 	request := jh.RequestData{
 		ReqValue:   req.reqValue,
 		ReqHeaders: req.reqHeader,
+		ReqReader:	req.reqReader,
+		ReqLength:	req.reqLength,
 	}
 	if req.expectedStatus == 0 {
 		req.expectedStatus = http.StatusOK
@@ -158,15 +163,13 @@ func (c *Client) DeleteDirectory(path string) error {
 
 // Creates an object at the specified path. Any parent directory must exist.
 // See API docs: http://apidocs.joyent.com/manta/api.html#PutObject
-func (c *Client) PutObject(path, objectName string, r io.Reader) error {
-	object, err := ioutil.ReadAll(r)
-	if err != nil {
-		return errors.Newf(err, "failed to read object")
-	}
+func (c *Client) PutObject(path, objectName string, object []byte) error {
+	r := bytes.NewReader(object)
 	req := request{
 		method:         client.PUT,
 		url:            makeURL(apiStorage, path, objectName),
-		reqValue:       object,
+		reqReader:      r,
+		reqLength:		len(object),
 		expectedStatus: http.StatusNoContent,
 	}
 	if _, err := c.sendRequest(req); err != nil {
@@ -179,17 +182,21 @@ func (c *Client) PutObject(path, objectName string, r io.Reader) error {
 // See API docs: http://apidocs.joyent.com/manta/api.html#GetObject
 func (c *Client) GetObject(path, objectName string) ([]byte, error) {
 	var resp []byte
+	requestHeaders := make(http.Header)
+	requestHeaders.Set("Accept", "*/*")
 	req := request{
-		method: client.GET,
-		url:    makeURL(apiStorage, path, objectName),
-		resp:   &resp,
+		method:    client.GET,
+		url:       makeURL(apiStorage, path, objectName),
+		reqHeader: requestHeaders,
+		resp:      &resp,
 	}
 	respData, err := c.sendRequest(req)
 	if err != nil {
 		return nil, errors.Newf(err, "failed to get object %s/%s", path, objectName)
 	}
-	res, _ := respData.RespValue.(*[]byte)
-	return *res, nil
+	fmt.Printf("Got response %q\n", respData)
+	res, _ := respData.RespValue.([]byte)
+	return res, nil
 }
 
 // Deletes the specified object from the specified location.

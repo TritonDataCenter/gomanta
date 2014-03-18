@@ -83,7 +83,7 @@ func (s *LocalTests) createDirectory(c *gc.C, path string) {
 
 // Helper method to create a test object
 func (s *LocalTests) createObject(c *gc.C, path, objName string) {
-	err := s.testClient.PutObject(path, objName, strings.NewReader("Test Manta API"))
+	err := s.testClient.PutObject(path, objName, []byte("Test Manta API"))
 	c.Assert(err, gc.IsNil)
 }
 
