@@ -62,8 +62,8 @@ type request struct {
 	url            string
 	reqValue       interface{}
 	reqHeader      http.Header
-	reqReader	   io.Reader
-	reqLength	   int
+	reqReader      io.Reader
+	reqLength      int
 	resp           interface{}
 	respHeader     *http.Header
 	expectedStatus int
@@ -74,8 +74,8 @@ func (c *Client) sendRequest(req request) (*jh.ResponseData, error) {
 	request := jh.RequestData{
 		ReqValue:   req.reqValue,
 		ReqHeaders: req.reqHeader,
-		ReqReader:	req.reqReader,
-		ReqLength:	req.reqLength,
+		ReqReader:  req.reqReader,
+		ReqLength:  req.reqLength,
 	}
 	if req.expectedStatus == 0 {
 		req.expectedStatus = http.StatusOK
@@ -169,7 +169,7 @@ func (c *Client) PutObject(path, objectName string, object []byte) error {
 		method:         client.PUT,
 		url:            makeURL(apiStorage, path, objectName),
 		reqReader:      r,
-		reqLength:		len(object),
+		reqLength:      len(object),
 		expectedStatus: http.StatusNoContent,
 	}
 	if _, err := c.sendRequest(req); err != nil {

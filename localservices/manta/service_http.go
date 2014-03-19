@@ -161,7 +161,7 @@ func (m *Manta) handleStorage(w http.ResponseWriter, r *http.Request) error {
 			//	d := json.NewDecoder(bytes.NewReader(obj))
 			//	d.Decode(&resp)
 			//} else {
-				resp = obj
+			resp = obj
 			//}
 			// not using sendJson to avoid double json encoding
 			writeResponse(w, http.StatusOK, resp)
