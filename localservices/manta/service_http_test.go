@@ -14,12 +14,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	gc "launchpad.net/gocheck"
 	"net/http"
 	"strconv"
 	"strings"
 
+	gc "launchpad.net/gocheck"
+
 	"fmt"
+
 	"github.com/joyent/gocommon/testing"
 	lm "github.com/joyent/gomanta/localservices/manta"
 	"github.com/joyent/gomanta/manta"
