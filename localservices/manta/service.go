@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/joyent/gomanta/localservices"
@@ -32,6 +33,7 @@ const (
 
 type Manta struct {
 	localservices.ServiceInstance
+	mu          sync.Mutex // protects access to the following fields
 	objects     map[string]manta.Entry
 	objectsData map[string][]byte
 	jobs        map[string]*manta.Job
@@ -80,26 +82,26 @@ func createDirectory(directoryName string) manta.Entry {
 
 func createJobObject(objName string, objData []byte) (manta.Entry, error) {
 	etag, err := localservices.NewUUID()
-	if err == nil {
-		return manta.Entry{
-			Name:  objName,
-			Type:  typeObject,
-			Mtime: time.Now().Format(time.RFC3339),
-			Etag:  etag,
-			Size:  len(objData),
-		}, nil
-	}
-
-	return manta.Entry{}, err
+	return manta.Entry{
+		Name:  objName,
+		Type:  typeObject,
+		Mtime: time.Now().Format(time.RFC3339),
+		Etag:  etag,
+		Size:  len(objData),
+	}, err
 }
 
 func (m *Manta) IsObject(name string) bool {
+	m.mu.Lock()
 	_, exist := m.objectsData[name]
+	m.mu.Unlock()
 	return exist
 }
 
 func (m *Manta) IsDirectory(name string) bool {
+	m.mu.Lock()
 	_, exist := m.objects[name]
+	m.mu.Unlock()
 	return !m.IsObject(name) && exist
 }
 
@@ -115,6 +117,8 @@ func (m *Manta) ListDirectory(path, marker string, limit int) ([]manta.Entry, er
 		limit = 256
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.objects[realPath]; !ok {
 		return nil, fmt.Errorf("%s was not found", realPath)
 	}
@@ -175,6 +179,8 @@ func (m *Manta) PutDirectory(path string) error {
 	realPath := fmt.Sprintf(storagePrefix, m.ServiceInstance.UserAccount, path)
 
 	// Check if parent dirs exist
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if strings.Contains(path, separator) {
 		ppath := path[:strings.LastIndex(path, separator)]
 		parents := getParentDirs(m.ServiceInstance.UserAccount, ppath)
@@ -205,6 +211,8 @@ func (m *Manta) DeleteDirectory(path string) error {
 
 	// Check if empty
 	ppath := realPath + separator
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for k, _ := range m.objects {
 		if strings.Contains(k, ppath) {
 			return ErrBadRequest
@@ -225,6 +233,8 @@ func (m *Manta) PutObject(path, objName string, objData []byte) error {
 	realPath := fmt.Sprintf(storagePrefix, m.ServiceInstance.UserAccount, path)
 
 	// Check if parent dirs exist
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	parents := getParentDirs(m.ServiceInstance.UserAccount, path)
 	for _, p := range parents {
 		if _, ok := m.objects[p]; !ok {
@@ -258,6 +268,8 @@ func (m *Manta) GetObject(objPath string) ([]byte, error) {
 	}
 
 	objId := fmt.Sprintf(storagePrefix, m.ServiceInstance.UserAccount, objPath)
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.objects[objId]; ok {
 		// TODO: Headers!
 		return m.objectsData[objId], nil
@@ -272,6 +284,8 @@ func (m *Manta) DeleteObject(objPath string) error {
 	}
 
 	objId := fmt.Sprintf(storagePrefix, m.ServiceInstance.UserAccount, objPath)
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.objects[objId]; ok {
 		delete(m.objects, objId)
 		delete(m.objectsData, objId)
@@ -290,6 +304,8 @@ func (m *Manta) PutSnapLink(path, linkName, location string) error {
 	realPath := fmt.Sprintf(storagePrefix, m.ServiceInstance.UserAccount, path)
 
 	// Check if parent dirs exist
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	parents := getParentDirs(m.ServiceInstance.UserAccount, path)
 	for _, p := range parents {
 		if _, ok := m.objects[p]; !ok {
@@ -330,6 +346,8 @@ func (m *Manta) ListJobs(live bool) ([]manta.Entry, error) {
 		return nil, err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for _, job := range m.jobs {
 		if live && (job.Cancelled || job.TimeDone != "") {
 			continue
@@ -361,6 +379,8 @@ func (m *Manta) CreateJob(job []byte) (string, error) {
 	jsonJob.TimeCreated = time.Now().Format(time.RFC3339)
 
 	//create directories
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	realPath := fmt.Sprintf(jobsPrefix, m.ServiceInstance.UserAccount, jobId)
 	m.objects[realPath] = createDirectory(jobId)
 	realPath = fmt.Sprintf(jobsPrefix, m.ServiceInstance.UserAccount, fmt.Sprintf("%s/stor", jobId))
@@ -375,6 +395,8 @@ func (m *Manta) GetJob(id string) (*manta.Job, error) {
 		return nil, err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if job, ok := m.jobs[id]; ok {
 		return job, nil
 	}
@@ -386,6 +408,8 @@ func (m *Manta) CancelJob(id string) error {
 		return err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if job, ok := m.jobs[id]; ok {
 		if !job.InputDone {
 			job.Cancelled = true
@@ -405,6 +429,8 @@ func (m *Manta) AddJobInputs(id string, jobInputs []byte) error {
 		return err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if job, ok := m.jobs[id]; ok {
 		var err error
 		if !job.InputDone {
@@ -430,6 +456,8 @@ func (m *Manta) EndJobInput(id string) error {
 		return err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if job, ok := m.jobs[id]; ok {
 		if !job.InputDone {
 			job.InputDone = true
@@ -447,6 +475,8 @@ func (m *Manta) GetJobOutput(id string) (string, error) {
 		return "", err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if job, ok := m.jobs[id]; ok {
 		index := len(job.Phases) - 1
 		phaseType := job.Phases[index].Type
@@ -467,6 +497,8 @@ func (m *Manta) GetJobInput(id string) (string, error) {
 		return "", err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.jobs[id]; ok {
 
 		objId := fmt.Sprintf("/%s/jobs/%s/in.txt", m.ServiceInstance.UserAccount, id)
@@ -485,6 +517,8 @@ func (m *Manta) GetJobFailures(id string) (string, error) {
 		return "", err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.jobs[id]; ok {
 		return "", nil
 	}
@@ -497,6 +531,8 @@ func (m *Manta) GetJobErrors(id string) ([]manta.JobError, error) {
 		return nil, err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.jobs[id]; ok {
 		return nil, nil
 	}

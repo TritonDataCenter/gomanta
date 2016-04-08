@@ -12,9 +12,10 @@ package manta_test
 
 import (
 	"fmt"
-	gc "launchpad.net/gocheck"
 	"strings"
 	"testing"
+
+	gc "launchpad.net/gocheck"
 
 	"encoding/json"
 
