@@ -11,7 +11,9 @@ package manta_test
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/joyent/gocommon/client"
@@ -31,7 +33,7 @@ type LiveTests struct {
 }
 
 func (s *LiveTests) SetUpTest(c *gc.C) {
-	client := client.NewClient(s.creds.MantaEndpoint.URL, "", s.creds, &manta.Logger)
+	client := client.NewClient(s.creds.MantaEndpoint.URL, "", s.creds, log.New(os.Stderr, "", log.LstdFlags))
 	c.Assert(client, gc.NotNil)
 	s.testClient = manta.New(client)
 	c.Assert(s.testClient, gc.NotNil)
