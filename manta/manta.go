@@ -1,6 +1,8 @@
 /*
 The gomanta/manta package interacts with the Manta API (http://apidocs.joyent.com/manta/api.html).
 
+Licensed under the Mozilla Public License version 2.0
+
 Copyright (c) 2016 Joyent Inc.
 Written by Daniele Stroppa <daniele.stroppa@joyent.com>
 

@@ -3,6 +3,8 @@
 //
 // Manta double testing service - HTTP API implementation
 //
+// Licensed under the Mozilla Public License version 2.0
+//
 // Copyright (c) 2016 Joyent Inc.
 //
 // Written by Daniele Stroppa <daniele.stroppa@joyent.com>

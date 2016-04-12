@@ -4,6 +4,8 @@
 //
 // Copyright (c) 2016 Joyent Inc.
 //
+// Licensed under the Mozilla Public License version 2.0
+//
 // Written by Daniele Stroppa <daniele.stroppa@joyent.com>
 //
 
