@@ -3,7 +3,7 @@
 //
 // Manta double testing service - internal direct API implementation
 //
-// Copyright (c) 2013 Joyent Inc.
+// Copyright (c) 2016 Joyent Inc.
 //
 // Written by Daniele Stroppa <daniele.stroppa@joyent.com>
 //

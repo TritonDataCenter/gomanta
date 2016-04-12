@@ -42,5 +42,5 @@ go test ./...
 ## License
 Licensed under [MPLv2](LICENSE).
 
-Copyright (c) 2013 Joyent Inc.
+Copyright (c) 2016 Joyent Inc.
 Written by Daniele Stroppa <daniele.stroppa@joyent.com>
