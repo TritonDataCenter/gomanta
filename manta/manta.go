@@ -16,16 +16,11 @@ import (
 	"path"
 	"time"
 
-	"github.com/juju/loggo"
-
 	"github.com/joyent/gocommon/client"
 	"github.com/joyent/gocommon/errors"
 
 	jh "github.com/joyent/gocommon/http"
 )
-
-// Logger for this package
-var Logger = loggo.GetLogger("gomanta.manta")
 
 const (
 	// The default version of the Manta API to use
