@@ -23,7 +23,7 @@ The gomanta package is structured as follow:
 Documentation can be found on godoc.
 
 - [http://godoc.org/github.com/joyent/gomanta](http://godoc.org/github.com/joyent/gomanta)
-- [http://godoc.org/github.com/joyent/gomanta/localservices] (http://godoc.org/github.com/joyent/gomanta/localservices)
+- [http://godoc.org/github.com/joyent/gomanta/localservices](http://godoc.org/github.com/joyent/gomanta/localservices)
 - [http://godoc.org/github.com/joyent/gomanta/manta](http://godoc.org/github.com/joyent/gomanta/manta)
 
 ## Testing
