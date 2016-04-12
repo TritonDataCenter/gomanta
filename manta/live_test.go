@@ -2,7 +2,11 @@
 // gomanta - Go library to interact with Joyent Manta
 //
 //
-// Copyright (c) 2013 Joyent Inc.
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2016 Joyent Inc.
 //
 // Written by Daniele Stroppa <daniele.stroppa@joyent.com>
 //
@@ -11,7 +15,9 @@ package manta_test
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/joyent/gocommon/client"
@@ -31,7 +37,7 @@ type LiveTests struct {
 }
 
 func (s *LiveTests) SetUpTest(c *gc.C) {
-	client := client.NewClient(s.creds.MantaEndpoint.URL, "", s.creds, &manta.Logger)
+	client := client.NewClient(s.creds.MantaEndpoint.URL, "", s.creds, log.New(os.Stderr, "", log.LstdFlags))
 	c.Assert(client, gc.NotNil)
 	s.testClient = manta.New(client)
 	c.Assert(s.testClient, gc.NotNil)

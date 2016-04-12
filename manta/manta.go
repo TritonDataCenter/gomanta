@@ -1,9 +1,11 @@
 /*
 The gomanta/manta package interacts with the Manta API (http://apidocs.joyent.com/manta/api.html).
 
-Licensed under LGPL v3.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) 2013 Joyent Inc.
+Copyright (c) 2016 Joyent Inc.
 Written by Daniele Stroppa <daniele.stroppa@joyent.com>
 
 */
@@ -18,16 +20,11 @@ import (
 	"path"
 	"time"
 
-	"github.com/juju/loggo"
-
 	"github.com/joyent/gocommon/client"
 	"github.com/joyent/gocommon/errors"
 
 	jh "github.com/joyent/gocommon/http"
 )
-
-// Logger for this package
-var Logger = loggo.GetLogger("gomanta.manta")
 
 const (
 	// The default version of the Manta API to use

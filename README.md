@@ -23,7 +23,7 @@ The gomanta package is structured as follow:
 Documentation can be found on godoc.
 
 - [http://godoc.org/github.com/joyent/gomanta](http://godoc.org/github.com/joyent/gomanta)
-- [http://godoc.org/github.com/joyent/gomanta/localservices] (http://godoc.org/github.com/joyent/gomanta/localservices)
+- [http://godoc.org/github.com/joyent/gomanta/localservices](http://godoc.org/github.com/joyent/gomanta/localservices)
 - [http://godoc.org/github.com/joyent/gomanta/manta](http://godoc.org/github.com/joyent/gomanta/manta)
 
 ## Testing
@@ -40,7 +40,7 @@ go test ./...
 ```
 
 ## License
-Licensed under [LGPL v3](LICENSE).
+Licensed under [MPLv2](LICENSE).
 
-Copyright (c) 2013 Joyent Inc.
+Copyright (c) 2016 Joyent Inc.
 Written by Daniele Stroppa <daniele.stroppa@joyent.com>
