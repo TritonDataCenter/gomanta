@@ -40,7 +40,7 @@ go test ./...
 ```
 
 ## License
-Licensed under [LGPL v3](LICENSE).
+Licensed under [MPLv2](LICENSE).
 
 Copyright (c) 2013 Joyent Inc.
 Written by Daniele Stroppa <daniele.stroppa@joyent.com>
