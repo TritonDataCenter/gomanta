@@ -191,8 +191,8 @@ func (c *Client) GetObject(path, objectName string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Newf(err, "failed to get object %s/%s", path, objectName)
 	}
-	res, _ := respData.RespValue.([]byte)
-	return res, nil
+	res, _ := respData.RespValue.(*[]byte)
+	return *res, nil
 }
 
 // Deletes the specified object from the specified location.
