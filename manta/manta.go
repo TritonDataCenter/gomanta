@@ -191,8 +191,11 @@ func (c *Client) GetObject(path, objectName string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Newf(err, "failed to get object %s/%s", path, objectName)
 	}
-	res, _ := respData.RespValue.([]byte)
-	return res, nil
+	res, ok := respData.RespValue.(*[]byte)
+	if !ok {
+		return nil, errors.Newf(err, "failed to assert downloaded data as type *[]byte for object %s/%s", path, objectName)
+	}
+	return *res, nil
 }
 
 // Deletes the specified object from the specified location.
