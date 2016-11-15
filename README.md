@@ -3,6 +3,8 @@ gomanta
 
 The gomanta package enables Go programs to interact with the Joyent Manta service.
 
+[![wercker status](https://app.wercker.com/status/e315959b9089bba1da9aff10d36e5b4c/s/master "wercker status")](https://app.wercker.com/project/byKey/e315959b9089bba1da9aff10d36e5b4c)
+
 ## Installation
 
 Use `go-get` to install gomanta
