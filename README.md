@@ -80,6 +80,14 @@ cd ${GOPATH}/src/github.com/joyent/gomanta
 go test ./...
 ```
 
+The `manta` package tests can also be run against live Manta. If you want to run this package, you can pass the `-live` flag and the `-key.name` flag (the latter is optional and defaults to `~/.ssh/id_rsa`) as shown below. Note that you can only run the `manta` package tests this way and running the rest of the test suite with these flags will result in a test runner error ("flag provided but not defined").
+
+```
+cd ${GOPATH}/src/github.com/joyent/gomanta
+go test ./manta -live -key.name=~/.ssh/my_key
+```
+
+
 ### Build the Library
 
 ```
