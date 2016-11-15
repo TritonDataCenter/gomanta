@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/julienschmidt/httprouter"
 	gc "launchpad.net/gocheck"
 
 	"github.com/joyent/gocommon/client"
@@ -47,7 +48,7 @@ func registerLocalTests(keyName string) {
 type LocalTests struct {
 	LiveTests
 	Server     *httptest.Server
-	Mux        *http.ServeMux
+	Mux        *httprouter.Router
 	oldHandler http.Handler
 	manta      *localmanta.Manta
 }
@@ -56,7 +57,7 @@ func (s *LocalTests) SetUpSuite(c *gc.C) {
 	// Set up the HTTP server.
 	s.Server = httptest.NewServer(nil)
 	s.oldHandler = s.Server.Config.Handler
-	s.Mux = http.NewServeMux()
+	s.Mux = httprouter.New()
 	s.Server.Config.Handler = s.Mux
 
 	// Set up a Joyent Manta service.
@@ -143,7 +144,6 @@ func (s *LocalTests) TestListDirectory(c *gc.C) {
 
 func (s *LocalTests) TestDeleteDirectory(c *gc.C) {
 	s.createDirectory(c, "test")
-
 	s.deleteDirectory(c, "test")
 }
 

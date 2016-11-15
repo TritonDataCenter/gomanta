@@ -15,7 +15,6 @@
 package manta
 
 import (
-	//"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/joyent/gomanta/manta"
+	"github.com/julienschmidt/httprouter"
 )
 
 // ErrorResponse defines a single HTTP error response.
@@ -89,17 +89,17 @@ func (e *ErrorResponse) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type mantaHandler struct {
 	manta  *Manta
-	method func(m *Manta, w http.ResponseWriter, r *http.Request) error
+	method func(m *Manta, w http.ResponseWriter, r *http.Request, p httprouter.Params) error
 }
 
-func (h *mantaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *mantaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	path := r.URL.Path
 	// handle trailing slash in the path
 	if strings.HasSuffix(path, "/") && path != "/" {
 		ErrNotFound.ServeHTTP(w, r)
 		return
 	}
-	err := h.method(h.manta, w, r)
+	err := h.method(h.manta, w, r, p)
 	if err == nil {
 		return
 	}
@@ -140,12 +140,13 @@ func getJobId(url string) string {
 	return tokens[3]
 }
 
-func (manta *Manta) handler(method func(m *Manta, w http.ResponseWriter, r *http.Request) error) http.Handler {
-	return &mantaHandler{manta, method}
+func (manta *Manta) handler(method func(m *Manta, w http.ResponseWriter, r *http.Request, p httprouter.Params) error) httprouter.Handle {
+	handler := &mantaHandler{manta, method}
+	return handler.ServeHTTP
 }
 
 // handleStorage handles the storage HTTP API.
-func (m *Manta) handleStorage(w http.ResponseWriter, r *http.Request) error {
+func (m *Manta) handleStorage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) error {
 	prefix := fmt.Sprintf("/%s/stor/", m.ServiceInstance.UserAccount)
 	object := strings.TrimPrefix(r.URL.Path, prefix)
 	switch r.Method {
@@ -160,13 +161,7 @@ func (m *Manta) handleStorage(w http.ResponseWriter, r *http.Request) error {
 			if obj == nil {
 				obj = []byte{}
 			}
-			// Check if request came from client or signed URL
-			//if r.URL.RawQuery != "" {
-			//	d := json.NewDecoder(bytes.NewReader(obj))
-			//	d.Decode(&resp)
-			//} else {
 			resp = obj
-			//}
 			// not using sendJson to avoid double json encoding
 			writeResponse(w, http.StatusOK, resp)
 			return nil
@@ -257,7 +252,7 @@ func (m *Manta) handleStorage(w http.ResponseWriter, r *http.Request) error {
 }
 
 // handleJob handles the Job HTTP API.
-func (m *Manta) handleJobs(w http.ResponseWriter, r *http.Request) error {
+func (m *Manta) handleJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) error {
 	var live = false
 	switch r.Method {
 	case "GET":
@@ -379,18 +374,45 @@ func (m *Manta) handleJobs(w http.ResponseWriter, r *http.Request) error {
 }
 
 // setupHTTP attaches all the needed handlers to provide the HTTP API.
-func (m *Manta) SetupHTTP(mux *http.ServeMux) {
-	handlers := map[string]http.Handler{
-		"/":           ErrNotFound,
-		"/$user/":     ErrBadRequest,
-		"/$user/stor": m.handler((*Manta).handleStorage),
-		"/$user/jobs": m.handler((*Manta).handleJobs),
+func (m *Manta) SetupHTTP(mux *httprouter.Router) {
+
+	baseRoute := "/" + m.ServiceInstance.UserAccount
+	mux.NotFound = ErrNotFound
+	mux.MethodNotAllowed = ErrNotAllowed
+	mux.RedirectFixedPath = true
+	mux.RedirectTrailingSlash = true
+	mux.HandleMethodNotAllowed = true
+
+	// this particular route can't be handled by httprouter correctly due to its
+	// handling of positional parameters but we can't just pass in ErrNotAllowed
+	// either because it's the wrong type
+	handleNotAllowed := func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		w.Write([]byte("Method is not allowed"))
 	}
-	for path, h := range handlers {
-		path = strings.Replace(path, "$user", m.ServiceInstance.UserAccount, 1)
-		if !strings.HasSuffix(path, "/") {
-			mux.Handle(path+"/", h)
-		}
-		mux.Handle(path, h)
-	}
+	mux.POST(baseRoute+"/stor", handleNotAllowed)
+
+	// storage APIs
+	// PutSnapLink and PutMetaData have the same route spec as other routes
+	// in this group, which isn't permitted by httprouter. We pick up the
+	// correct path in the handler
+	mux.PUT(baseRoute+"/stor/:dir", m.handler((*Manta).handleStorage))         // PutDirectory
+	mux.GET(baseRoute+"/stor/:dir", m.handler((*Manta).handleStorage))         // ListDirectory
+	mux.DELETE(baseRoute+"/stor/:dir", m.handler((*Manta).handleStorage))      // DeleteDirectory
+	mux.PUT(baseRoute+"/stor/:dir/:obj", m.handler((*Manta).handleStorage))    // PutObject
+	mux.GET(baseRoute+"/stor/:dir/:obj", m.handler((*Manta).handleStorage))    // GetObject
+	mux.DELETE(baseRoute+"/stor/:dir/:obj", m.handler((*Manta).handleStorage)) // DeleteObject
+
+	// job APIs
+	mux.POST(baseRoute+"/jobs", m.handler((*Manta).handleJobs))                 // CreateJob
+	mux.POST(baseRoute+"/jobs/:id/live/in", m.handler((*Manta).handleJobs))     // AddJobInputs
+	mux.POST(baseRoute+"/jobs/:id/live/in/end", m.handler((*Manta).handleJobs)) // EndJobInput
+	mux.POST(baseRoute+"/jobs/:id/live/cancel", m.handler((*Manta).handleJobs)) // CancelJob
+	mux.GET(baseRoute+"/jobs", m.handler((*Manta).handleJobs))                  // ListJobs
+	mux.GET(baseRoute+"/jobs/:id/live/status", m.handler((*Manta).handleJobs))  // GetJob
+	mux.GET(baseRoute+"/jobs/:id/live/out", m.handler((*Manta).handleJobs))     // GetJobOutput
+	mux.GET(baseRoute+"/jobs/:id/live/in", m.handler((*Manta).handleJobs))      // GetJobInput
+	mux.GET(baseRoute+"/jobs/:id/live/fail", m.handler((*Manta).handleJobs))    // GetJobFailures
+	mux.GET(baseRoute+"/jobs/:id/live/err", m.handler((*Manta).handleJobs))     // GetJobErrors
 }

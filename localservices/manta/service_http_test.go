@@ -17,14 +17,13 @@ package manta_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
 	gc "launchpad.net/gocheck"
-
-	"fmt"
 
 	"github.com/joyent/gocommon/testing"
 	lm "github.com/joyent/gomanta/localservices/manta"
